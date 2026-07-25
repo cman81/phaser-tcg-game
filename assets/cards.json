@@ -1,0 +1,58 @@
+{
+  "frames": [
+    {
+      "filename": "heartA",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 65  
+      }
+    },
+    {
+      "filename": "heart2",
+      "frame": {
+        "x": 65,
+        "y": 0,
+        "w": 65,
+        "h": 65  
+      }
+    },
+    {
+      "filename": "heart3",
+      "frame": {
+        "x": 130,
+        "y": 0,
+        "w": 65,
+        "h": 65  
+      }
+    },
+    {
+      "filename": "heart4",
+      "frame": {
+        "x": 195,
+        "y": 0,
+        "w": 65,
+        "h": 65  
+      }
+    },
+    {
+      "filename": "heart5",
+      "frame": {
+        "x": 260,
+        "y": 0,
+        "w": 65,
+        "h": 65  
+      }
+    },
+    {
+      "filename": "back",
+      "frame": {
+        "x": 845,
+        "y": 65,
+        "w": 64,
+        "h": 65  
+      }
+    }
+  ]
+}

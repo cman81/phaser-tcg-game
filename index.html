@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Phaser Card Game TCG Prototype</title>
+    
+    <!-- LOAD PHASER: Pull the game engine framework from a CDN -->
+    <script src="vendor/phaserjs/phaser.min.js"></script>
+    
+    <style>
+        /* CENTER THE GAME SCREEN: Quick CSS to center our board on the screen */
+        body { 
+            margin: 0; 
+            background: #1a202c; /* Dark grey backdrop */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- THE CONTAINER: The target hook element for our game window -->
+    <div id="phaser-game"></div>
+
+    <!-- Isolated Game Component Blueprints -->
+    <script src="Card.js"></script>
+    <script src="Playmat.js"></script>
+    <script src="GameHud.js"></script>
+    <script src="TableManager.js"></script>
+
+    <!-- Main Execution Engine Setup Layer -->
+    <script src="game.js"></script>
+
+</body>
+</html>
