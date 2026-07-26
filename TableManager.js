@@ -31,7 +31,7 @@ class TableManager {
     }
 
     /**
-     * Scrubs references and locks down assets dropped flat on the discard pile.
+     * Scrubs references, pushes data payloads to tracking arrays, and locks down assets.
      */
     discardCard(gameObject, dropZone) {
         const previousZone = gameObject.getData('currentZone');
@@ -39,17 +39,25 @@ class TableManager {
             previousZone.setData('isOccupied', false);
         }
 
+        // --- NEW: STATE DATA MUTATION ROUTINE ---
+        // Stash the underlying card data configuration into our global array tracker
+        discardPile.push(gameObject.cardData);
+
         gameObject.x = dropZone.x;
         gameObject.y = dropZone.y;
         gameObject.setData('currentZone', null);
         
         this.scene.input.setDraggable(gameObject, false);
+        gameObject.setAlpha(0.5); // Visual polish fade on table
 
         if (hand.includes(gameObject)) {
             hand = hand.filter(card => card !== gameObject);
             updateHandLayout(this.scene);
         }
+
+        if (hud) hud.flashWarning(`Card added to Discard Pile. Total: ${discardPile.length}`);
     }
+
 
     /**
      * Validates, routes, and hooks cards to active or bench zones.
@@ -84,7 +92,7 @@ class TableManager {
                     updateHandLayout(this.scene);
                 }
             });
-            
+
             return; 
         }
 

@@ -33,6 +33,9 @@ let currentPhase = TurnPhases.DRAW_PHASE;
 // Global Array States (Backend Logic Trackers)
 let deck = [];
 let hand = [];
+let discardPile = [];
+let oppDiscardPile = []; // --- NEW: PLAYER B's DISCARD DATA LAYER ---
+
 
 // --- UPDATED TUTORIAL 7 MOCK STATES ---
 let opponentHandCount = 0; // Simply tracks the integer count of cards in the opponent's hand
@@ -67,7 +70,7 @@ function create() {
 
     setupTableInteractionListeners(this);
     setupDeckInteractionListeners(this);
-    setupKeyboardCounterListeners(this);
+    setupKeyboardInteractionController(this);
 
     // 2. Initialize Core Database Array Pools
     generateDeck();
@@ -328,7 +331,7 @@ function setupDeckInteractionListeners(scene) {
  * 
  * @param {Phaser.Scene} scene - The active scene context instance.
  */
-function setupKeyboardCounterListeners(scene) {
+function setupKeyboardInteractionController(scene) {
     // Register individual key input hooks
     const minusKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.MINUS);
     const numpadMinus = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_MINUS);
@@ -355,11 +358,14 @@ function setupKeyboardCounterListeners(scene) {
     minusKey.on('down', handleMinusPressed);
     numpadMinus.on('down', handleMinusPressed);
 
-    // --- UPDATED DECK BROWSING MODAL TOGGLE ROUTE ---
+    // --- DECK BROWSER TOGGLE ROUTE ---
     scene.input.keyboard.on('keydown-B', () => {
-        // Validation guard removed to support mid-turn card lookup actions (e.g., Shaymin POR 3)
-        console.log("Hotkey B toggled. Opening Deck Browser instantly for strategic lookup...");
-        deckBrowser.toggle();
+        deckBrowser.open(deck, "Deck Contents", true); // Pass target array, title, and draftable flag
+    });
+
+    // --- NEW: DISCARD PILE BROWSER TOGGLE ROUTE ---
+    scene.input.keyboard.on('keydown-V', () => {
+        deckBrowser.open(discardPile, "Your Discard Pile", false); // Discard views are review-only (no drafting yet)
     });
 
     // --- ADD MOCK OPPONENT PLACEMENT ROUTE ---
@@ -370,8 +376,21 @@ function setupKeyboardCounterListeners(scene) {
         }
     };
 
-    // Bind both alphabetical 'O' and numerical digit '0' to fire your mock engine handler cleanly
+    // Bind alphabetical 'O' to fire your mock engine handler cleanly
     scene.input.keyboard.on('keydown-O', handleOpponentDraw);
+
+    // --- NEW: INSPECT OPPONENT DISCARD TOGGLE ROUTE ---
+    scene.input.keyboard.on('keydown-P', () => {
+        deckBrowser.open(oppDiscardPile, "Opponent Discard Pile", false); // Public knowledge, review-only
+    });
+
+    // --- NEW: TRIGGER MOCK OPPONENT DISCARD ANIMATION ---
+    scene.input.keyboard.on('keydown-I', () => {
+        console.log("Hotkey I pressed. Simulating opponent discarding a card from hand...");
+        if (networkManager) {
+            networkManager.simulateOpponentDiscard();
+        }
+    });
 
 }
 

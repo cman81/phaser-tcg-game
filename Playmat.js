@@ -146,10 +146,10 @@ class Playmat {
         const discardY = 460;
 
         // Draw Player A dynamic depth pile asset
-        this.drawStaggeredDeckStack(graphics, deckX, deckY, 'Deck', '#a0aec0');
+        this.drawStaggeredDeckStack(graphics, deckX, deckY, 'Deck [B]', '#a0aec0');
 
         // Draw Player A static discard stack outline frame 
-        this.drawSingleSlotOutline(graphics, deckX, discardY, 'Discard', '#a0aec0', '12px');
+        this.drawSingleSlotOutline(graphics, deckX, discardY, 'Discard [V]', '#a0aec0', '12px');
     }
 
     /**
@@ -165,7 +165,7 @@ class Playmat {
         this.drawStaggeredDeckStack(graphics, oppDeckX, oppDeckY, 'Opp. Deck', '#718096');
 
         // Draw Player B static discard stack outline frame via cleanly reused helper utility
-        this.drawSingleSlotOutline(graphics, oppDeckX, oppDiscardY, 'Opp. Discard', '#718096', '12px');
+        this.drawSingleSlotOutline(graphics, oppDeckX, oppDiscardY, 'Opp. Discard [P]', '#718096', '12px');
     }    
 
     /**
