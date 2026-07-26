@@ -41,6 +41,26 @@ class Card extends Phaser.GameObjects.Container {
     }
 
     /**
+     * Phaser Lifecycle Destroy Override.
+     * Cleans up lingering clock timers and kills active tweens to prevent post-destruction crashes.
+     */
+    destroy(fromScene) {
+        // 1. Clear and remove any ticking 0.7-second hover clock delays instantly
+        if (this.hoverTimer) {
+            this.hoverTimer.remove();
+            this.hoverTimer = null;
+        }
+
+        // 2. FIXED: Kill any running scale animations immediately before the scene reference is unlinked
+        if (this.scene && this.scene.tweens) {
+            this.scene.tweens.killTweensOf(this);
+        }
+        
+        // Pass control back to Phaser's base container destroy logic
+        super.destroy(fromScene);
+    }
+
+    /**
      * Instantiates and attaches the core background frame image asset.
      * @param {Phaser.Scene} scene - Active scene context.
      */

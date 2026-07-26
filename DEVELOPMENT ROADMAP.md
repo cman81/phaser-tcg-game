@@ -15,6 +15,8 @@
 - Completed: Self-Documenting UI Overlays (Upgraded `Playmat.js` zone label textures to prominently display active hotkey shortcuts, e.g., "Deck [B]", "Discard [V]", and "Opp. Discard [P]", providing rapid user navigation cues).
 - Completed: Opponent State Deserialization (Extended `MockNetworkManager.js` with an automated `simulateOpponentDiscard` routine triggered via `[I]`, tracking asymmetric discards into a separate `oppDiscardPile` array inspectable at runtime via the `[P]` key).
 - Completed: Input Router Semantic Clean Pass (Refactored `setupKeyboardCounterListeners` into a fully integrated `setupKeyboardInteractionController` routing module to resolve code-smell and match its structural role).
+- Completed: High-Resolution Aspect Overhaul & Animation Guards (Re-engineered system metrics to support realistic 267 x 370 vertical card geometry sitting at a compact 0.18 table scale. Programmed mouse-stillness debouncers and animation lock guards inside `Card.js` to enable crisp 1.0 inspection zooming that auto-collapses cleanly on motion updates, paired with an overridden `destroy()` method to completely block post-destruction tween and timer lifecycle crashes).
+- Completed: UI Scrollable Grid Layer Sandbox (Refactored `DeckBrowser.js` into a sandwich container architecture isolating a static `hudContent` tier from a scrollable `scrollContent` view layer. Added full geometry clipping masks, custom scrollbar thumb tracking, and mouse wheel input hooks to cleanly navigate extensive 60-card deck matrices).
 
 ## THE ROADMAP PLAN
 
