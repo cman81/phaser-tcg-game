@@ -34,11 +34,15 @@ let currentPhase = TurnPhases.DRAW_PHASE;
 let deck = [];
 let hand = [];
 
+// --- UPDATED TUTORIAL 7 MOCK STATES ---
+let opponentHandCount = 0; // Simply tracks the integer count of cards in the opponent's hand
+
 // Class Instance Trackers
 let playmat = null;
 let hud = null;
 let tableManager = null;
 let deckBrowser = null;
+let networkManager = null;
 
 // Layout Position Constants
 const HAND_Y = 660; // The fixed Y-coordinate line where cards in hand rest
@@ -59,6 +63,7 @@ function create() {
     playmat = new Playmat(this);
     tableManager = new TableManager(this);
     deckBrowser = new DeckBrowser(this);
+    networkManager = new MockNetworkManager(this);
 
     setupTableInteractionListeners(this);
     setupDeckInteractionListeners(this);
@@ -356,6 +361,18 @@ function setupKeyboardCounterListeners(scene) {
         console.log("Hotkey B toggled. Opening Deck Browser instantly for strategic lookup...");
         deckBrowser.toggle();
     });
+
+    // --- ADD MOCK OPPONENT PLACEMENT ROUTE ---
+    const handleOpponentDraw = () => {
+        console.log("Opponent draw hotkey triggered. Spawning an automated network ghost card play...");
+        if (networkManager) {
+            networkManager.simulateOpponentPlay();
+        }
+    };
+
+    // Bind both alphabetical 'O' and numerical digit '0' to fire your mock engine handler cleanly
+    scene.input.keyboard.on('keydown-O', handleOpponentDraw);
+
 }
 
 /**
@@ -374,4 +391,20 @@ function generateUUID() {
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
+}
+
+/**
+ * Mutates opponent tracking counts and updates HUD text layers via GameHud methods.
+ * @param {number} change - The adjustment integer (+1 or -1).
+ */
+function adjustOpponentHandCount(change) {
+    opponentHandCount += change;
+    
+    // Clamp the lowest floor barrier boundary to 0
+    if (opponentHandCount < 0) opponentHandCount = 0;
+
+    // Delegate the layout display update to our decoupled GameHud class manager
+    if (hud) {
+        hud.updateOpponentHandDisplay(opponentHandCount);
+    }
 }

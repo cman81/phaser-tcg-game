@@ -38,6 +38,15 @@ class GameHud {
             backgroundColor: '#2d3748',
             padding: { x: 10, y: 5 }
         }).setOrigin(0.5).setAlpha(0).setDepth(2000);
+
+        // --- TUTORIAL 7: OPPONENT PRIVATE HAND TEXT INDICATOR ---
+        // Rendered cleanly near the top-left margin beneath your own deck count tracker
+        this.opponentHandText = this.scene.add.text(50, 100, 'Opponent Hand: 0 cards', {
+            fontSize: '16px',
+            color: '#718096', // Balanced slate gray theme
+            fontStyle: 'bold'
+        });
+
     }
 
     /**
@@ -94,6 +103,22 @@ class GameHud {
                 duration: 500,
                 ease: 'Linear'
             });
+        });
+    }
+
+    /**
+     * Refreshes the opponent hand text readout tracking frame with clean color pulses.
+     * @param {number} count - The current integer count value to display.
+     */
+    updateOpponentHandDisplay(count) {
+        if (!this.opponentHandText) return;
+
+        this.opponentHandText.setText(`Opponent Hand: ${count} cards`);
+        
+        // Add a quick visual heartbeat color pulse to indicate a change occurred
+        this.opponentHandText.setColor('#4cbd97'); // Flash emerald green
+        this.scene.time.delayedCall(300, () => {
+            this.opponentHandText.setColor('#718096'); // Snap back to base slate
         });
     }
 

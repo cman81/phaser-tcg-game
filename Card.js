@@ -8,7 +8,7 @@ class Card extends Phaser.GameObjects.Container {
      * @param {number} y - Initial vertical coordinate position.
      * @param {Object} cardData - The underlying data model object configuration values.
      */
-    constructor(scene, x, y, cardData) {
+    constructor(scene, x, y, cardData, isOwnCard = true) {
         super(scene, x, y);
         
         // 1. Initialize State Tracking Metrics
@@ -17,6 +17,7 @@ class Card extends Phaser.GameObjects.Container {
         this.damageCounters = 0;
         this.isHovered = false;
         this.attachedEnergy = [];
+        this.isOwnCard = isOwnCard;
 
         // 2. Build Component Visual Layers
         this.buildArtworkLayer(scene);
@@ -35,6 +36,9 @@ class Card extends Phaser.GameObjects.Container {
      * @param {Phaser.Scene} scene - Active scene context.
      */
     buildArtworkLayer(scene) {
+        // OWNERSHIP CHECK: If the card belongs to an opponent, force the frame to show the generic back texture
+        const frameKey = this.isOwnCard ? this.cardData.atlasKey : 'back';
+        
         // Arguments: (x, y, 'AtlasNicknameKey', 'SpecificStringFrameKey')
         this.art = scene.add.image(0, 0, 'card_atlas', this.cardData.atlasKey);
         this.add(this.art);
@@ -55,6 +59,20 @@ class Card extends Phaser.GameObjects.Container {
 
         this.nameText.setOrigin(0.5);
         this.add(this.nameText);
+
+        // OWNERSHIP CHECK: Hide text identity instantly if it is an opponent's private card
+        if (!this.isOwnCard) {
+            this.nameText.setVisible(false);
+        }
+    }
+
+    /**
+     * Public utility to flip the card face-up dynamically when deployed onto public table zones.
+     */
+    revealCard() {
+        this.isOwnCard = true;
+        this.art.setFrame(this.cardData.atlasKey);
+        this.nameText.setVisible(true);
     }
 
     /**
