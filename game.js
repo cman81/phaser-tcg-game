@@ -266,6 +266,7 @@ function setupTableInteractionListeners(scene) {
     
     // Drag Route
     scene.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+        gameObject.setData('isDeployed', false); 
         tableManager.processCardDrag(gameObject, dragX, dragY);
     });
 
@@ -286,7 +287,11 @@ function setupTableInteractionListeners(scene) {
     scene.input.on('dragend', (pointer, gameObject, dropped) => {
         gameObject.setData('hasWarnedDrag', false);
 
-        if (!dropped || hand.includes(gameObject)) {
+        // If it missed slot anchors completely, pop it back into hand spacing slots
+        if (!gameObject.getData('isDeployed')) {
+            if (!hand.includes(gameObject)) {
+                hand.push(gameObject);
+            }
             updateHandLayout(scene);
         }
     });
@@ -385,6 +390,15 @@ function setupKeyboardInteractionController(scene) {
         }
     });
 
+    // --- TACTILE UNDO PLAYMAT ROUTE ---
+    scene.input.keyboard.on('keydown-Z', () => {
+        // Only allow moves to be undone if it's currently your turn or during initial setup
+        if (currentPhase === SandboxStates.MY_TURN || currentPhase === SandboxStates.SETUP) {
+            tableManager.undoLastMove();
+        } else {
+            if (hud) hud.flashWarning("Cannot undo tabletop actions during the opponent's clock window.");
+        }
+    });
 }
 
 /**
