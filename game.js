@@ -162,27 +162,13 @@ function generateDeck() {
     ];
     
     for (let i = 1; i <= 60; i++) {
-        // Safe check wrapper: Use secure native crypto if available, otherwise use math string fallback
-        let cardUuid;
-        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-            cardUuid = crypto.randomUUID();
-        } else {
-            // Standard RFC4122 compliant UUIDv4 math generator fallback
-            cardUuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-        
-        // Use standard modulo math to loop cleanly through the 5 items in cardPrototypes array
         const prototypeIndex = (i - 1) % cardPrototypes.length;
         const currentProto = cardPrototypes[prototypeIndex];
 
         // Push fully unified individual card data tracking payload
         deck.push({ 
             id: i, 
-            uuid: cardUuid, 
+            uuid: generateUUID(), 
             name: currentProto.name, 
             atlasKey: currentProto.atlasKey,
             type: currentProto.type
@@ -190,27 +176,26 @@ function generateDeck() {
     }
 }
 
-
-
 /**
- * Shuffles the global deck data array by sorting its objects using their unique UUID strings.
- * 
- * This function triggers an alphabetical sort comparison across the cryptographically 
- * randomized UUID string fields of each card. This effectively breaks up the repeating 
- * Alpha/Beta pattern and completely shuffles the data stack before cards are dealt.
- *
- * @returns {void}
+ * Shuffles the global deck data array by re-assigning fresh UUID tokens
+ * and sorting them alphabetically. Bypasses static array lockups.
  */
 function shuffleDeck() {
-    // Standard alphanumeric array comparison sort using string keys
+    // 1. Loop through every remaining card item and assign a brand new random UUID token via shared helper
+    deck.forEach(card => {
+        card.uuid = generateUUID();
+    });
+
+    // 2. Standard alphanumeric array comparison sort using the freshly assigned string keys
     deck.sort((cardA, cardB) => {
         if (cardA.uuid < cardB.uuid) return -1;
         if (cardA.uuid > cardB.uuid) return 1;
         return 0;
     });
     
-    console.log("Deck successfully sorted and shuffled using secure UUID strings.");
+    console.log(`[ENGINE] Fresh UUID tokens mapped. 60-Card Database Stack successfully scrambled. Cards: ${deck.length}`);
 }
+
 
 /**
  * Pops a card data node from the deck stack array and instantiates a visual card container.
@@ -370,5 +355,23 @@ function setupKeyboardCounterListeners(scene) {
         // Validation guard removed to support mid-turn card lookup actions (e.g., Shaymin POR 3)
         console.log("Hotkey B toggled. Opening Deck Browser instantly for strategic lookup...");
         deckBrowser.toggle();
+    });
+}
+
+/**
+ * Core utility to generate a cryptographically secure UUIDv4 string.
+ * Bypasses duplication across generation and shuffle service arrays.
+ * 
+ * @returns {string} A valid RFC4122 compliant UUIDv4 string.
+ */
+function generateUUID() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    // Standard RFC4122 compliant UUIDv4 math generator fallback
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
     });
 }

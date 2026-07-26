@@ -63,6 +63,27 @@ class DeckBrowser {
         const closeBtn = this.scene.add.text(950, 40, '[ X ]', {
             fontSize: '18px', color: '#ef4444', fontStyle: 'bold', backgroundColor: '#1e293b', padding: { x: 8, y: 4 }
         }).setOrigin(0.5).setInteractive();
+
+        // 4. Add Shuffle Button Interactive Icon Widget
+        const shuffleBtn = this.scene.add.text(820, 40, '🔄 Shuffle Deck', {
+            fontSize: '14px', 
+            color: '#34d399', // Emerald green text
+            fontStyle: 'bold', 
+            backgroundColor: '#1e293b', // Matching dark slate backing
+            padding: { x: 12, y: 6 }
+        }).setOrigin(0.5).setInteractive();
+        
+        shuffleBtn.on('pointerdown', () => {
+            // 1. BLIND SANDBOX PROTOCOL: Instantly dismantle the modal and hide the layout views
+            this.close();
+            
+            // 2. Invoke the global engine data randomizer completely out of sight
+            shuffleDeck();
+            
+            // 3. Trigger an on-screen HUD rule notification to confirm completion
+            if (hud) hud.flashWarning("Deck securely re-shuffled blindly face-down.");
+        });
+        this.container.add(shuffleBtn);
         
         closeBtn.on('pointerdown', () => this.close());
         this.container.add(closeBtn);
