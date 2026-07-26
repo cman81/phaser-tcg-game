@@ -11,6 +11,14 @@ class TableManager {
      * Updates positions for dragging cards and group-drags stacked attachments.
      */
     processCardDrag(gameObject, dragX, dragY) {
+        // --- PREVENT ACCIDENTAL HOVER DRAG ZOOM OVERLAPS ---
+        if (gameObject.hoverTimer) {
+            gameObject.hoverTimer.remove();
+        }
+        if (gameObject.isZoomed) {
+            gameObject.executeZoomOut();
+        }
+        
         if (currentPhase !== TurnPhases.MAIN_PHASE && !gameObject.getData('hasWarnedDrag')) {
             if (hud) hud.flashWarning("Manipulating cards outside of your active Main Phase.");
             gameObject.setData('hasWarnedDrag', true);

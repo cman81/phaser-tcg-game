@@ -19,6 +19,12 @@ class Card extends Phaser.GameObjects.Container {
         this.attachedEnergy = [];
         this.isOwnCard = isOwnCard;
 
+        // --- NEW: HOVER INSPECTION METRICS ---
+        this.hoverTimer = null;
+        this.isZoomed = false;
+        this.originalDepth = 0;
+        this.isAnimatingZoom = false; // <-- NEW: ANIMATION LOCK GUARD
+
         // 2. Build Component Visual Layers
         this.buildArtworkLayer(scene);
         this.buildTitleLayer(scene);
@@ -26,6 +32,9 @@ class Card extends Phaser.GameObjects.Container {
 
         // 3. Configure Input Physics & Interaction Pipelines
         this.initializeInputEngine(scene);
+
+        // STASH INITIAL SCALE: Capture whether this card sits at 0.18 on the table or 0.4 in a modal
+        this.baselineScale = this.scaleX; 
 
         // 4. Push Instance into Active Rendering Hierarchy
         scene.add.existing(this);
@@ -49,18 +58,18 @@ class Card extends Phaser.GameObjects.Container {
      * @param {Phaser.Scene} scene - Active scene context.
      */
     buildTitleLayer(scene) {
-        this.nameText = scene.add.text(0, 42, this.cardData.name, { 
-            fontSize: '10px', 
-            color: '#e2e8f0', // Crisp off-white slate text
+        // Positioned near the bottom boundary of the 370px tall frame (Y: 160)
+        this.nameText = scene.add.text(0, 160, this.cardData.name, { 
+            fontSize: '24px', // Increased font size since it renders inside a large container
+            color: '#e2e8f0', 
             fontStyle: 'bold',
             align: 'center',
-            wordWrap: { width: 80, useAdvancedWrap: true } 
+            wordWrap: { width: 220, useAdvancedWrap: true } 
         });
 
         this.nameText.setOrigin(0.5);
         this.add(this.nameText);
 
-        // OWNERSHIP CHECK: Hide text identity instantly if it is an opponent's private card
         if (!this.isOwnCard) {
             this.nameText.setVisible(false);
         }
@@ -80,17 +89,15 @@ class Card extends Phaser.GameObjects.Container {
      * @param {Phaser.Scene} scene - Active scene context.
      */
     buildCounterLayer(scene) {
-        // Positioned at X: -45 to clear the left edge, and Y: -32.5 to match the top boundary perfectly
-        this.counterText = scene.add.text(-45, -32.5, '', {
-            fontSize: '12px',
-            color: '#fc8181', // Coral warning red text
+        // Placed near the top-left boundary corner of your large container geometry
+        this.counterText = scene.add.text(-110, -165, '', {
+            fontSize: '32px', // Larger display font for high-res visibility
+            color: '#fc8181', 
             fontStyle: 'bold',
-            backgroundColor: '#1a202c', // Solid dark backing panel
-            padding: { x: 5, y: 3 }
+            backgroundColor: '#1a202c', 
+            padding: { x: 12, y: 8 }
         });
 
-        // Anchor the text origin to its own horizontal center (0.5) and top vertical line (0)
-        // This keeps it perfectly level with the card top even as the text height expands
         this.counterText.setOrigin(0.5, 0);
         this.counterText.setVisible(false);
         this.add(this.counterText);
@@ -106,19 +113,50 @@ class Card extends Phaser.GameObjects.Container {
      * @param {Phaser.Scene} scene - Active scene context.
      */
     initializeInputEngine(scene) {
-        // Define bounding hit-area dimensions matching the 65x65 pixel frame asset size
-        this.setSize(65, 65);
+        // Set local container bounds to match the high-resolution source texture size
+        this.setSize(267, 370);
 
-        // Map pixel-accurate hit area parameters to the container geometry
-        this.setInteractive(new Phaser.Geom.Rectangle(0, 0, 65, 65), Phaser.Geom.Rectangle.Contains);
+        // Map pixel-accurate hit area parameters to the high-res container geometry
+        this.setInteractive(new Phaser.Geom.Rectangle(0, 0, 267, 370), Phaser.Geom.Rectangle.Contains);
 
-        // Register hover state changes
+        // Map baseline scale down to 0.18 to protect vertical margins
+        this.setScale(0.18);
+
+        // Event 1: Mouse enters card boundaries
         this.on('pointerover', () => {
             this.isHovered = true;
+            
+            // FIXED: Removed scene.input.isOver so the execution pass can proceed
+            if (this.isZoomed || this.isAnimatingZoom) return;
+
+            if (this.hoverTimer) this.hoverTimer.remove();
+            this.hoverTimer = scene.time.delayedCall(300, () => {
+                this.executeZoomIn();
+            });
         });
 
+        // Event 2: Mouse moves while remaining inside the card boundaries
+        this.on('pointermove', () => {
+            // FIX: If we are actively scaling up, ignore this micro-movement to prevent loop freeze
+            if (this.isAnimatingZoom) return;
+
+            if (this.isZoomed) {
+                this.executeZoomOut();
+            } else {
+                if (this.hoverTimer) {
+                    this.hoverTimer.remove();
+                    this.hoverTimer = scene.time.delayedCall(300, () => {
+                        this.executeZoomIn();
+                    });
+                }
+            }
+        });
+
+        // Event 3: Mouse completely exits card boundaries
         this.on('pointerout', () => {
             this.isHovered = false;
+            if (this.hoverTimer) this.hoverTimer.remove();
+            this.executeZoomOut();
         });
 
         // Click handler with Drag Threshold Guard
@@ -138,6 +176,53 @@ class Card extends Phaser.GameObjects.Container {
 
         // Register this specific wrapper object to be fully draggable by the input pipeline
         scene.input.setDraggable(this);
+    }
+
+    /**
+     * Magnifies the card container scale and forces it to clear lower rendering depths.
+     */
+    executeZoomIn() {
+        if (!this.isOwnCard || this.isAnimatingZoom) return;
+        
+        this.isZoomed = true;
+        this.isAnimatingZoom = true; // Lock input handling down
+        this.originalDepth = this.depth;
+        this.setDepth(9000);
+
+        this.scene.tweens.add({
+            targets: this,
+            scaleX: 1.0, 
+            scaleY: 1.0,
+            duration: 150,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+                // Release the lock only after the scale transform completes cleanly
+                this.scene.time.delayedCall(50, () => {
+                    this.isAnimatingZoom = false;
+                });
+            }
+        });
+    }
+
+    /**
+     * Smoothly restores baseline container properties.
+     */
+    executeZoomOut() {
+        if (!this.isZoomed || this.isAnimatingZoom) return;
+        this.isZoomed = false;
+        this.isAnimatingZoom = true; 
+
+        this.scene.tweens.add({
+            targets: this,
+            scaleX: this.baselineScale, // FIXED: Fallback dynamically to its native container scale
+            scaleY: this.baselineScale, // FIXED: Fallback dynamically to its native container scale
+            duration: 100,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+                this.setDepth(this.originalDepth);
+                this.isAnimatingZoom = false; 
+            }
+        });
     }
 
      /**

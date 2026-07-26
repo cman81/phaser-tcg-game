@@ -7,8 +7,12 @@ class Playmat {
      */
     constructor(scene) {
         this.scene = scene;
-        this.cardW = 65;
-        this.cardH = 65;
+        this.cardW = 267;
+        this.cardH = 370;
+        
+        // --- FIXED COMPACT FOOTPRINT Engine (0.18 Scale) ---
+        this.displayW = this.cardW * 0.18; // 48.06px
+        this.displayH = this.cardH * 0.18; // 66.6px
         
         this.activeZone = null;
         this.benchZones = [];
@@ -41,32 +45,28 @@ class Playmat {
     drawStaggeredDeckStack(graphics, x, y, labelText, labelColor) {
         const stackOffset = 2;
 
-        // Render visual card backs staggered up and left to simulate physical depth
         for (let i = 2; i >= 0; i--) {
             const offsetX = x - (i * stackOffset);
             const offsetY = y - (i * stackOffset);
             
             const backSprite = this.scene.add.image(offsetX, offsetY, 'card_atlas', 'back');
-            backSprite.setDisplaySize(this.cardW, this.cardH ? this.cardH : 65); 
             
-            if (i > 0) {
-                backSprite.setTint(0xcccccc); // Core depth shadow mapping tint
-            }
+            // Map down to the scaled 66.75 x 92.5 layout boundary box
+            backSprite.setDisplaySize(this.displayW, this.displayH); 
+            if (i > 0) backSprite.setTint(0xcccccc);
         }
 
-        // Draw structural outline guide frame boundaries
-        graphics.strokeRect(x - (this.cardW / 2), y - (this.cardH / 2), this.cardW, this.cardH);
-        
-        // Add centered top alignment title readout text
-        this.scene.add.text(x, y - 50, labelText, { fontSize: '12px', color: labelColor }).setOrigin(0.5);
+        // Draw boundary rectangle using display sizes
+        graphics.strokeRect(x - (this.displayW / 2), y - (this.displayH / 2), this.displayW, this.displayH);
+        this.scene.add.text(x, y - (this.displayH / 2) - 15, labelText, { fontSize: '12px', color: labelColor }).setOrigin(0.5);
     }
 
     /**
      * Renders a standalone outline frame boundary with an optimized centered label tag.
      */
     drawSingleSlotOutline(graphics, x, y, labelText, labelColor, fontSize = '10px') {
-        graphics.strokeRect(x - (this.cardW / 2), y - (this.cardH / 2), this.cardW, this.cardH);
-        this.scene.add.text(x, y - 50, labelText, { fontSize: fontSize, color: labelColor }).setOrigin(0.5);
+        graphics.strokeRect(x - (this.displayW / 2), y - (this.displayH / 2), this.displayW, this.displayH);
+        this.scene.add.text(x, y - (this.displayH / 2) - 15, labelText, { fontSize: fontSize, color: labelColor }).setOrigin(0.5);
     }
 
     /**
@@ -92,21 +92,22 @@ class Playmat {
     }
 
     /**
-     * Instantiates vertically stacked combat spots dead center on the table.
+     * Instantiates vertically stacked compact combat spots dead center on the table.
+     * Fixed: Shifted from raw 267x370 sizes down to displayW and displayH bounds.
      */
     drawActiveCombatSpot(graphics) {
         graphics.lineStyle(2, 0xffffff, 0.2);
         const centerX = 512;
         
-        // Player A's active lane slot coordinates
+        // Player A's active lane slot coordinates (FIXED BOUNDS)
         const playerActiveY = 360; 
-        graphics.strokeRect(centerX - (this.cardW / 2), playerActiveY - (this.cardH / 2), this.cardW, this.cardH);
-        this.scene.add.text(centerX + 50, playerActiveY, 'Your Active', { fontSize: '10px', color: '#a0aec0' }).setOrigin(0, 0.5);
+        graphics.strokeRect(centerX - (this.displayW / 2), playerActiveY - (this.displayH / 2), this.displayW, this.displayH);
+        this.scene.add.text(centerX + (this.displayW / 2) + 15, playerActiveY, 'Your Active', { fontSize: '10px', color: '#a0aec0' }).setOrigin(0, 0.5);
 
-        // Player B's active lane slot coordinates
+        // Player B's active lane slot coordinates (FIXED BOUNDS)
         const oppActiveY = 260; 
-        graphics.strokeRect(centerX - (this.cardW / 2), oppActiveY - (this.cardH / 2), this.cardW, this.cardH);
-        this.scene.add.text(centerX + 50, oppActiveY, 'Opp. Active', { fontSize: '10px', color: '#718096' }).setOrigin(0, 0.5);
+        graphics.strokeRect(centerX - (this.displayW / 2), oppActiveY - (this.displayH / 2), this.displayW, this.displayH);
+        this.scene.add.text(centerX + (this.displayW / 2) + 15, oppActiveY, 'Opp. Active', { fontSize: '10px', color: '#718096' }).setOrigin(0, 0.5);
     }
 
     /**
@@ -173,7 +174,7 @@ class Playmat {
      */
     initializeDropZones() {
         // Player A Active Drop Target
-        this.playerActiveZone = this.scene.add.zone(512, 360, this.cardW, this.cardH).setRectangleDropZone(this.cardW, this.cardH);
+        this.playerActiveZone = this.scene.add.zone(512, 360, this.displayW, this.displayH).setRectangleDropZone(this.displayW, this.displayH);
         this.playerActiveZone.setData('zoneType', 'playerActive');
         this.playerActiveZone.setData('isOccupied', false);
 
@@ -184,7 +185,7 @@ class Playmat {
 
         for (let i = 0; i < 5; i++) {
             const slotX = startX + (i * spacing);
-            const bZone = this.scene.add.zone(slotX, benchY, this.cardW, this.cardH).setRectangleDropZone(this.cardW, this.cardH);
+            const bZone = this.scene.add.zone(slotX, benchY, this.displayW, this.displayH).setRectangleDropZone(this.displayW, this.displayH);
             
             bZone.setData('zoneType', 'bench');
             bZone.setData('isOccupied', false);
@@ -197,7 +198,7 @@ class Playmat {
         const discardY = 460;
 
         // Physical Deck Zone (Configured to listen for clicks to draw cards manually)
-        this.deckZone = this.scene.add.zone(deckX, deckY, this.cardW, this.cardH).setRectangleDropZone(this.cardW, this.cardH);
+        this.deckZone = this.scene.add.zone(deckX, deckY, this.displayW, this.displayH).setRectangleDropZone(this.displayW, this.displayH);
         this.deckZone.setData('zoneType', 'deck');
         this.deckZone.setInteractive(); // Enables the zone geometry to fire pointerdown events
 
@@ -206,7 +207,7 @@ class Playmat {
         this.deckZone.setDepth(100); 
 
         // Physical Discard Zone (Accepts dropped cards from the table or hand)
-        this.discardZone = this.scene.add.zone(deckX, discardY, this.cardW, this.cardH).setRectangleDropZone(this.cardW, this.cardH);
+        this.discardZone = this.scene.add.zone(deckX, discardY, this.displayW, this.displayH).setRectangleDropZone(this.displayW, this.displayH);
         this.discardZone.setData('zoneType', 'discard');
     }
 }

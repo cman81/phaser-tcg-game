@@ -119,9 +119,9 @@ class DeckBrowser {
     renderTargetGrid() {
         const startX = 140;
         const startY = 160;
-        const columns = 8;
-        const spacingX = 105;
-        const spacingY = 110;
+        const columns = 6; // Reduced column count from 8 to 6 to handle wider text layout gaps
+        const spacingX = 150; // Expanded horizontal space
+        const spacingY = 200; // Expanded vertical space to accommodate the 370px height aspect ratio
 
         this.activeTargetArray.forEach((cardData, index) => {
             const col = index % columns;
@@ -130,12 +130,14 @@ class DeckBrowser {
             const gridX = startX + (col * spacingX);
             const gridY = startY + (row * spacingY);
 
-            // Pass true for isOwnCard so discard items display face-up for review
             const browserCard = new Card(this.scene, gridX, gridY, cardData, true);
+            
+            // Explicitly force browser modal cards to sit flat at 0.4 scale for clean grid spacing
+            browserCard.setScale(0.4);
+            browserCard.baselineScale = 0.4; // Explicit override pass to be bulletproof
             this.scene.input.setDraggable(browserCard, false);
             browserCard.removeAllListeners('pointerdown');
 
-            // Routing click stream hooks based on our open context mode
             if (this.isDraftableMode) {
                 browserCard.on('pointerdown', () => {
                     this.draftCardFromBrowser(cardData);
@@ -146,6 +148,7 @@ class DeckBrowser {
             this.browserCards.push(browserCard);
         });
     }
+
 
     draftCardFromBrowser(cardData) {
         // Strip out of the specific array currently loaded into the browser context (the deck)

@@ -82,7 +82,7 @@ class MockNetworkManager {
 
     /**
      * Sandbox Testing Utility: Simulates the opponent playing a card into the scrap heap.
-     * Deducts hand size counts, glides an asset across the grid, and populates oppDiscardPile.
+     * Fixed: Sets baseline 0.18 board scale so the card doesn't appear huge during transit.
      */
     simulateOpponentDiscard() {
         if (opponentHandCount === 0) {
@@ -92,46 +92,47 @@ class MockNetworkManager {
 
         if (hud) hud.flashWarning("Opponent discarding a card from their hand...");
 
-        // 1. Deduct one hidden element from their HUD counter tracker
         adjustOpponentHandCount(-1);
 
-        // 2. Generate a mock data payload for the discarded entity item
         const mockDiscardedData = {
             id: 666,
             uuid: generateUUID(),
             name: "Opponent Scrap",
-            atlasKey: "heart2", // Baseline texture frame index
+            atlasKey: "heart2", 
             type: "character"
         };
 
-        // 3. Spawn a temporary masked card container at their hand origin area (X: 150, Y: 100)
+        // 1. Instantiate the temporary masked container at their hand origin area
         const discardCard = new Card(this.scene, 150, 100, mockDiscardedData, false);
         discardCard.setDepth(4000);
+        
+        // --- FIXED: FORCE COMPACT BOARD SCALE footprint IMMEDIATELY ---
+        discardCard.setScale(0.18); 
 
-        // 4. Glide the item across the board directly into the upper-left Opp. Discard zone (124, 180)
+        // 2. Glide the item across the board directly into the upper-left Opp. Discard zone (124, 180)
         this.scene.tweens.add({
             targets: discardCard,
             x: 124,
             y: 180,
-            scale: 1.0,
             duration: 500,
             ease: 'Cubic.easeOut',
             onStart: () => {
-                // Instantly reveal the card face-up mid-flight since discard piles are public information
+                // Flip face-up mid-flight since discards are public knowledge
                 discardCard.revealCard();
+                
+                // FIXED: Re-force the compact 0.18 scale so revealCard() doesn't inflate it to 1.0!
+                discardCard.setScale(0.18);
                 discardCard.setAlpha(0.8);
             },
             onComplete: () => {
-                // 5. Append its raw data payload cleanly into Player B's independent discard heap array
                 oppDiscardPile.push(mockDiscardedData);
-                
-                // 6. Fade the visual placeholder out slightly on the table layer, just like your local setup
                 discardCard.setAlpha(0.5);
                 
                 if (hud) hud.flashWarning(`Opponent Discard Total: ${oppDiscardPile.length} cards`);
             }
         });
     }
+
 
 
 }

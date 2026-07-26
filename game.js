@@ -57,7 +57,7 @@ const game = new Phaser.Game(config);
 /** @this Phaser.Scene */
 function preload() {
     // Stream your local atlas sheets into memory
-    this.load.atlas('card_atlas', 'assets/cards.png', 'assets/cards.json');
+    this.load.atlas('card_atlas', 'assets/pkmn.png', 'assets/pkmn.json');
 }
 
 /** @this Phaser.Scene */
@@ -162,11 +162,11 @@ function generateDeck() {
     deck = []; // Clear array state completely before population pass
 
     const cardPrototypes = [
-        { name: "AH", atlasKey: "heartA", type: "character" },
-        { name: "2H", atlasKey: "heart2", type: "character" },
-        { name: "3H", atlasKey: "heart3", type: "character" },
-        { name: "4H", atlasKey: "heart4", type: "energy" }, // Designated Energy Piece
-        { name: "5H", atlasKey: "heart5", type: "energy" }   // Designated Energy Piece
+        { name: "Pika", atlasKey: "pikachu", type: "character" },
+        { name: "Chan", atlasKey: "chandelure", type: "character" },
+        { name: "Sprig", atlasKey: "sprigatito", type: "character" },
+        { name: "Water", atlasKey: "water", type: "energy" }, // Designated Energy Piece
+        { name: "Fire", atlasKey: "fire", type: "energy" }   // Designated Energy Piece
     ];
     
     for (let i = 1; i <= 60; i++) {
@@ -241,25 +241,20 @@ function dealCard(scene) {
  * @returns {void}
  */
 function updateHandLayout(scene) {
-    const cardSpacing = 75; // Pixel gap between card centers
+    const cardSpacing = 58; // Reduced center gap from 75 to 58 to pack vertical pieces perfectly
     
-    // Calculates a centered horizontal starting point based on total cards in hand
     const startX = 512 - (((hand.length - 1) * cardSpacing) / 2);
 
     hand.forEach((card, index) => {
         const targetX = startX + (index * cardSpacing);
 
-        // Animate the component to its calculated spot with elastic spacing glide mechanics
         scene.tweens.add({
             targets: card,
             x: targetX,
             y: HAND_Y,
-            scale: 1, // Reset downscale caps if sliding from messy decks
-            duration: 350,
-            ease: 'Cubic.easeOut', // Smooth deceleration curve
-            onStart: () => {
-                card.setDepth(100 + index); // Maintain strict stack sorting
-            }
+            scale: 0.18, // Sync baseline transform bounds
+            duration: 250,
+            ease: 'Power2'
         });
     });
 }

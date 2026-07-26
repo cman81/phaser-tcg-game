@@ -1,0 +1,58 @@
+{
+    "frames": [
+        {
+            "filename": "pikachu",
+            "frame": {
+                "x": 0,
+                "y": 0,
+                "w": 267,
+                "h": 370    
+            }
+        },
+        {
+            "filename": "chandelure",
+            "frame": {
+                "x": 267,
+                "y": 0,
+                "w": 267,
+                "h": 370
+            }
+        },
+        {
+            "filename": "sprigatito",
+            "frame": {
+                "x": 534,
+                "y": 0,
+                "w": 267,
+                "h": 370
+            }
+        },
+        {
+            "filename": "water",
+            "frame": {
+                "x": 0,
+                "y": 370,
+                "w": 267,
+                "h": 369
+            }
+        },
+        {
+            "filename": "fire",
+            "frame": {
+                "x": 267,
+                "y": 370,
+                "w": 267,
+                "h": 369
+            }
+        },
+        {
+            "filename": "back",
+            "frame": {
+                "x": 534,
+                "y": 370,
+                "w": 267,
+                "h": 369
+            }
+        }
+    ]
+}
