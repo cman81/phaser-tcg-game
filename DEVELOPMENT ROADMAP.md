@@ -17,13 +17,17 @@
 - Completed: Input Router Semantic Clean Pass (Refactored `setupKeyboardCounterListeners` into a fully integrated `setupKeyboardInteractionController` routing module to resolve code-smell and match its structural role).
 - Completed: High-Resolution Aspect Overhaul & Animation Guards (Re-engineered system metrics to support realistic 267 x 370 vertical card geometry sitting at a compact 0.18 table scale. Programmed mouse-stillness debouncers and animation lock guards inside `Card.js` to enable crisp 1.0 inspection zooming that auto-collapses cleanly on motion updates, paired with an overridden `destroy()` method to completely block post-destruction tween and timer lifecycle crashes).
 - Completed: UI Scrollable Grid Layer Sandbox (Refactored `DeckBrowser.js` into a sandwich container architecture isolating a static `hudContent` tier from a scrollable `scrollContent` view layer. Added full geometry clipping masks, custom scrollbar thumb tracking, and mouse wheel input hooks to cleanly navigate extensive 60-card deck matrices).
+- Completed: Chess Clock State Engine & Plunger Pass (Replaced rigid five-step constraints with a simplified macro system mapping `SETUP`, `MY_TURN`, and `OPPONENT_TURN` states triggered by a tactile, clock-style button listener).
+- Completed: Automated Opponent Scripting Service (Encapsulated an automated sequence into `MockNetworkManager.js` that draws 7 cards and plays an active character on setup completion, and handles draw, bench deployment, and stacked energy attachments on regular turns).
+- Completed: Tactile Move Recovery Engine (Engineered a positional history array stack inside `TableManager.js` that records state snapshots before drop mutations, allowing players to wind back sandbox misplays instantly via a global `[Z]` hotkey loop).
 
 ## THE ROADMAP PLAN
 
 ### Next Objective:
-- **Tutorial 6.5: Direct Table Interactions**
-  * Hook up interactive mouse-click area triggers right on the physical `Playmat.js` deck/discard slot geometries to open overlay browsers instead of relying exclusively on keyboard hotkeys.
-  * Implement recovery mechanics allowing players to actively pull chosen components out of the public discard viewing grid straight back into hand tracking logic vectors.
+- **Tutorial 7.5: Spatial History & Action Tracker Extensions**
+  * Expand the snapshot recording data parameters to capture damage adjustment metrics, allowing players to instantly roll back accidental token updates alongside card movements.
+  * Add descriptive on-screen floating text hints indicating how many actions remain inside the current undo log pipeline.
+  * Revisit the original Tutorial 6.5 goal to wire direct interactive mouse-click triggers on the physical `Playmat.js` deck/discard slot geometries to open overlay browsers.
 
 ## RESOURCES
 - https://opengameart.org/content/playing-cards-pack

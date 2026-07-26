@@ -18,9 +18,9 @@ class TableManager {
         if (gameObject.isZoomed) {
             gameObject.executeZoomOut();
         }
-        
-        if (currentPhase !== TurnPhases.MAIN_PHASE && !gameObject.getData('hasWarnedDrag')) {
-            if (hud) hud.flashWarning("Manipulating cards outside of your active Main Phase.");
+
+        if (currentPhase !== SandboxStates.MY_TURN && !gameObject.getData('hasWarnedDrag')) {
+            if (hud) hud.flashWarning("Manipulating cards outside of your active turn window.");
             gameObject.setData('hasWarnedDrag', true);
         }
 
@@ -71,8 +71,8 @@ class TableManager {
      * Validates, routes, and hooks cards to active or bench zones.
      */
     playCardToSlot(gameObject, dropZone) {
-        if (currentPhase !== TurnPhases.MAIN_PHASE) {
-            if (hud) hud.flashWarning("Card deployed outside your Main Phase.");
+        if (currentPhase !== SandboxStates.MY_TURN) {
+            if (hud) hud.flashWarning("Card deployed outside your turn window.");
         }
 
         // Collision Check & Attachment Override Logic

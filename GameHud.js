@@ -67,8 +67,18 @@ class GameHud {
      */
     setupEndTurnButtonListener() {
         this.endTurnButton.on('pointerdown', () => {
-            if (currentPhase === TurnPhases.MAIN_PHASE) {
-                switchPhase(this.scene, TurnPhases.OPPONENT_TURN);
+            if (currentPhase === SandboxStates.SETUP) {
+                // Clicked 'Finish Setup'
+                switchPhase(this.scene, SandboxStates.MY_TURN);
+            } 
+            else if (currentPhase === SandboxStates.MY_TURN) {
+                // Clicked 'End Turn' -> Pass clock to Opponent
+                switchPhase(this.scene, SandboxStates.OPPONENT_TURN);
+            } 
+            else if (currentPhase === SandboxStates.OPPONENT_TURN) {
+                // Clicked 'Intercept Turn' -> Sandbox Override feature
+                this.flashWarning("Manual Interception: Stopping opponent execution.");
+                switchPhase(this.scene, SandboxStates.MY_TURN);
             }
         });
     }

@@ -9,6 +9,10 @@ class MockNetworkManager {
     constructor(scene) {
         this.scene = scene;
         this.clientId = generateUUID();
+
+        // --- NEW: OPPONENT FIELD GEOMETRY STATE MIRRORS ---
+        this.opponentActiveCard = null;
+        this.opponentBenchSlots = [null, null, null, null, null];
         
         console.log(`[MOCK-NET] Initializing loopback sandbox. Assigned Session ID: ${this.clientId}`);
     }
@@ -133,6 +137,198 @@ class MockNetworkManager {
         });
     }
 
+    /**
+     * Drives a staggered sequence of automated tabletop actions simulating the opponent's turn.
+     * Executes setup sequences (drawing 7 cards, playing an active character) or standard 
+     * turn actions (drawing 1 card, playing bench cards, and attaching random energies).
+     * Each step incorporates active state validation guards to cleanly support manual interception.
+     */
+    runOpponentSandboxTurn() {
+        if (hud) hud.flashWarning("Opponent Turn: Activating play script...");
 
+        // ACTION 1: Top-deck draw 1 card for their turn immediately
+        this.scene.time.delayedCall(800, () => {
+            if (currentPhase !== SandboxStates.OPPONENT_TURN) return;
 
+            if (hud) hud.flashWarning("Opponent Turn: Drawing 1 card...");
+            adjustOpponentHandCount(1);
+
+            // ACTION 2: Drop 1 card onto their bench row if space is open
+            this.scene.time.delayedCall(1200, () => {
+                if (currentPhase !== SandboxStates.OPPONENT_TURN) return;
+
+                const openBenchIndex = this.opponentBenchSlots.findIndex(slot => slot === null);
+                const shouldPlayBench = Math.random() > 0.4;
+
+                if (shouldPlayBench && openBenchIndex !== -1) {
+                    this.deployOpponentBenchCard(openBenchIndex);
+                }
+
+                // ACTION 3: Attach an energy overlay onto their existing cards
+                this.scene.time.delayedCall(1200, () => {
+                    if (currentPhase !== SandboxStates.OPPONENT_TURN) return;
+
+                    this.attachRandomOpponentEnergy();
+
+                    // ACTION 4: Conclude actions and pass the clock back to you
+                    this.scene.time.delayedCall(1200, () => {
+                        if (currentPhase !== SandboxStates.OPPONENT_TURN) return;
+
+                        if (hud) hud.flashWarning("Opponent finishes actions. Clock returned to you!");
+                        switchPhase(this.scene, SandboxStates.MY_TURN);
+                    });
+                });
+            });
+        });
+    }
+
+    /**
+     * Instantiates a hidden opponent character card at their deck origin and glides it smoothly 
+     * into the upper active combat slot before flipping the frame face-up.
+     * Mutates the internal opponent tracking metrics and coordinates spatial rendering scales.
+     * 
+     * @returns {void}
+     */
+    deployOpponentActiveCard() {
+        if (hud) hud.flashWarning("Opponent slides a character into their Active Slot.");
+        adjustOpponentHandCount(-1);
+
+        const mockData = { id: 801, uuid: generateUUID(), name: "Opp. Active", atlasKey: "chandelure", type: "character" };
+        
+        // Glide from Opponent Deck Pile (124, 300) to Opponent Active Slot (512, 260)
+        this.opponentActiveCard = new Card(this.scene, 124, 300, mockData, false);
+        this.opponentActiveCard.setDepth(4000);
+
+        this.scene.tweens.add({
+            targets: this.opponentActiveCard,
+            x: 512,
+            y: 260,
+            duration: 500,
+            ease: 'Cubic.easeOut',
+            onComplete: () => {
+                this.opponentActiveCard.setDepth(10);
+                this.opponentActiveCard.revealCard(); // Flip face up publicly
+                this.opponentActiveCard.setScale(0.18);
+            }
+        });
+    }
+
+    /**
+     * Instantiates a benched character card and animates it from the opponent's deck slot coordinates 
+     * straight into the next available open benched layout geometry position.
+     * Stores the game object reference into the active tracking arrays for later overlay attachments.
+     * 
+     * @param {number} slotIndex - The index of the targeted bench position slot (0-4).
+     * @returns {void}
+     */
+    deployOpponentBenchCard(slotIndex) {
+        if (hud) hud.flashWarning(`Opponent drops a card onto Bench Slot ${slotIndex + 1}.`);
+        adjustOpponentHandCount(-1);
+
+        const mockData = { id: 850 + slotIndex, uuid: generateUUID(), name: `Opp. Bench ${slotIndex + 1}`, atlasKey: "pikachu", type: "character" };
+        
+        // Calculate coordinate positions relative to Playmat's bench row configuration metrics
+        const spacing = 90;
+        const targetX = (512 - (2 * spacing)) + (slotIndex * spacing);
+        const targetY = 180; // Opponent bench row grid baseline
+
+        const benchCard = new Card(this.scene, 124, 300, mockData, false);
+        benchCard.setDepth(4000);
+        this.opponentBenchSlots[slotIndex] = benchCard;
+
+        this.scene.tweens.add({
+            targets: benchCard,
+            x: targetX,
+            y: targetY,
+            duration: 500,
+            ease: 'Cubic.easeOut',
+            onComplete: () => {
+                benchCard.setDepth(10);
+                benchCard.revealCard();
+                benchCard.setScale(0.18);
+            }
+        });
+    }
+
+    /**
+     * Evaluates valid active and benched character hosts currently deployed on the opponent's side, 
+     * selects a target at random, and glides a face-up fire/water energy overlay card underneath it.
+     * Leverages structured stack index tracking to preserve exact uniform vertical and horizontal staggers.
+     * 
+     * @returns {void}
+     */
+    attachRandomOpponentEnergy() {
+        // Evaluate valid character target hosts alive on their side
+        let validTargets = [];
+        if (this.opponentActiveCard) validTargets.push(this.opponentActiveCard);
+        this.opponentBenchSlots.forEach(card => { if (card !== null) validTargets.push(card); });
+
+        if (validTargets.length === 0) return;
+
+        // Select a card completely at random
+        const randomHost = Phaser.Utils.Array.GetRandom(validTargets);
+        adjustOpponentHandCount(-1);
+        if (hud) hud.flashWarning(`Opponent attaches Energy to ${randomHost.cardData.name}.`);
+
+        const energyData = { id: 999, uuid: generateUUID(), name: "Energy", atlasKey: Math.random() > 0.5 ? "fire" : "water", type: "energy" };
+        const visualEnergy = new Card(this.scene, 124, 300, energyData, true); // Energy spawns face-up
+        visualEnergy.setScale(0.18);
+        visualEnergy.setDepth(3900);
+
+        randomHost.attachedEnergy.push(visualEnergy);
+        const stackCount = randomHost.attachedEnergy.length;
+        
+        // Stack attachments dynamically utilizing TableManager's exact stagger metrics
+        const targetX = randomHost.x + (stackCount * 10);
+        const targetY = randomHost.y - (stackCount * 15);
+
+        this.scene.tweens.add({
+            targets: visualEnergy,
+            x: targetX,
+            y: targetY,
+            duration: 500,
+            ease: 'Cubic.easeOut',
+            onComplete: () => {
+                this.scene.children.sendToBack(visualEnergy);
+                this.scene.children.bringToTop(randomHost);
+            }
+        });
+    }
+
+    /**
+     * Executes the opponent's initial game setup actions.
+     * Draws 7 cards and slides an active character into play before passing control back to you.
+     */
+    executeOpponentSetupSequence() {
+        if (hud) hud.flashWarning("Opponent Setup: Drawing 7 starting cards...");
+        adjustOpponentHandCount(7);
+        
+        // Pause 1 second for tactical pacing, then slide their active card out
+        this.scene.time.delayedCall(1000, () => {
+            if (hud) hud.flashWarning("Opponent deploying active character...");
+            adjustOpponentHandCount(-1);
+
+            const mockData = { id: 801, uuid: generateUUID(), name: "Opp. Active", atlasKey: "chandelure", type: "character" };
+            
+            // Glide from Opponent Deck Pile (124, 300) to Opponent Active Slot (512, 260)
+            this.opponentActiveCard = new Card(this.scene, 124, 300, mockData, false);
+            this.opponentActiveCard.setDepth(4000);
+
+            this.scene.tweens.add({
+                targets: this.opponentActiveCard,
+                x: 512,
+                y: 260,
+                duration: 600,
+                ease: 'Cubic.easeOut',
+                onComplete: () => {
+                    this.opponentActiveCard.setDepth(10);
+                    this.opponentActiveCard.revealCard(); // Flip face up publicly
+                    this.opponentActiveCard.setScale(0.18);
+                    
+                    // Setup finished! Pass the chess clock directly over to your first turn
+                    switchPhase(this.scene, SandboxStates.MY_TURN);
+                }
+            });
+        });
+    }
 }

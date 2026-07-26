@@ -18,24 +18,21 @@ const config = {
     }
 };
 
-// Create a machine-name directory of your valid states
-const TurnPhases = {
-    OPPONENT_TURN: 'OPPONENT_TURN', // Input locked while waiting
-    DRAW_PHASE:     'DRAW_PHASE',     // Automatic top-decking stage
-    MAIN_PHASE:     'MAIN_PHASE',     // Strategic drop action window
-    ATTACK_PHASE:   'ATTACK_PHASE',   // Action processing calculation window
-    END_PHASE:      'END_PHASE'       // State scrubbing and reset stage
+// Replace the old TurnPhases dictionary with this flat macro-state model
+const SandboxStates = {
+    SETUP: 'SETUP',
+    MY_TURN: 'MY_TURN',
+    OPPONENT_TURN: 'OPPONENT_TURN'
 };
 
 // Establish your default global pointer variable
-let currentPhase = TurnPhases.DRAW_PHASE;
+let currentPhase = SandboxStates.SETUP;
 
 // Global Array States (Backend Logic Trackers)
 let deck = [];
 let hand = [];
 let discardPile = [];
-let oppDiscardPile = []; // --- NEW: PLAYER B's DISCARD DATA LAYER ---
-
+let oppDiscardPile = [];
 
 // --- UPDATED TUTORIAL 7 MOCK STATES ---
 let opponentHandCount = 0; // Simply tracks the integer count of cards in the opponent's hand
@@ -80,7 +77,7 @@ function create() {
     hud = new GameHud(this);
 
     // 4. Launch Game Turn State Sequences
-    switchPhase(this, TurnPhases.DRAW_PHASE);
+    switchPhase(this, SandboxStates.SETUP);
 }
 
 /** @this Phaser.Scene */
@@ -89,57 +86,58 @@ function update() {
 }
 
 /**
- * Manages the Finite State Machine (FSM) transitions for the turn phase engine.
+ * Orchestrates a chess clock-style state switcher for the sandbox engine.
+ * Toggles turn permissions between players, manages the translucent header displays, 
+ * and handles initial setup completion routines.
  * 
- * This central controller acts as a validation guard and state wrapper. It updates
- * global variables, manipulates HUD text labels, toggles UI interactivity controls
- * (such as revealing or hiding the End Turn button), and automates timed phase transitions
- * (like forcing a draw delay or simulating opponent AI wait loops).
- *
  * @param {Phaser.Scene} scene - The active scene context driving the runtime process and timing events.
- * @param {string} newPhase - The target state machine identifier being entered (must be a valid value from TurnPhases).
+ * @param {string} newState - The target sandbox state machine identifier being entered (must be a valid value from SandboxStates).
  * @returns {void}
- * 
- * @see TurnPhases
  */
-function switchPhase(scene, newPhase) {
-    currentPhase = newPhase;
-    console.log(`Phase Changed To: ${currentPhase}`);
+function switchPhase(scene, newState) {
+    // If trying to move to MY_TURN directly from SETUP, run the opponent's deployment first
+    if (currentPhase === SandboxStates.SETUP && newState === SandboxStates.MY_TURN) {
+        // Prevent double triggers by hiding the interface button instantly
+        if (hud) hud.endTurnButton.setVisible(false);
+        currentPhase = SandboxStates.MY_TURN; 
+        
+        // Let the manager animate everything, then it will recall switchPhase automatically
+        networkManager.executeOpponentSetupSequence();
+        return; 
+    }
 
-    // Safe check: If HUD has finished instantiating, notify it to update text layers
+    currentPhase = newState;
+    console.log(`[CLOCK PIVOT] Active State Changed To: ${currentPhase}`);
+
     if (hud) {
         hud.updatePhaseDisplay(currentPhase);
     }
 
     switch (currentPhase) {
-        case TurnPhases.DRAW_PHASE:
-            // 1. Give visual confirmation that a player's turn has begun
-            // scene.phaseText.setColor('#48bb78'); // Green tint for active turn
+        case SandboxStates.SETUP:
+            if (hud) {
+                hud.endTurnButton.setText("Finish Setup");
+                hud.endTurnButton.setVisible(true);
+            }
+            break;
+
+        case SandboxStates.MY_TURN:
+            if (hud) {
+                hud.endTurnButton.setText("End Turn");
+                hud.endTurnButton.setVisible(true);
+                hud.flashWarning("Your Turn: Actions are unconstrained.");
+            }
+            break;
+
+        case SandboxStates.OPPONENT_TURN:
+            if (hud) {
+                // Keep the button visible so you can manually intercept or advance their turn!
+                hud.endTurnButton.setText("Intercept Turn"); 
+                hud.endTurnButton.setVisible(true);
+            }
             
-            // 2. Automate a 1-second delay pause before pushing the user into the Main action phase
-            scene.time.delayedCall(1000, () => {
-                switchPhase(scene, TurnPhases.MAIN_PHASE);
-            });
-            break;
-
-        case TurnPhases.MAIN_PHASE:
-            // Reveal operational buttons on screen
-            if (hud) hud.endTurnButton.setVisible(true);
-            break;
-
-        case TurnPhases.ATTACK_PHASE:
-            // Instantly hide system controls while calculations resolve
-            if (hud) hud.endTurnButton.setVisible(false);
-            break;
-
-        case TurnPhases.OPPONENT_TURN:
-            if (hud) hud.endTurnButton.setVisible(false);
-            // scene.phaseText.setColor('#e53e3e'); // Red tint for waiting window
-            
-            // Simulate an opponent AI taking its turn by waiting 2.5 seconds, then cycle back
-            scene.time.delayedCall(2500, () => {
-                switchPhase(scene, TurnPhases.DRAW_PHASE);
-            });
+            // Delegate the automated actions smoothly to your loopback facade service
+            networkManager.runOpponentSandboxTurn();
             break;
     }
 }
