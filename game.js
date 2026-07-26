@@ -38,6 +38,7 @@ let hand = [];
 let playmat = null;
 let hud = null;
 let tableManager = null;
+let deckBrowser = null;
 
 // Layout Position Constants
 const HAND_Y = 660; // The fixed Y-coordinate line where cards in hand rest
@@ -57,6 +58,8 @@ function create() {
     // 1. Initialize Board Layout & Input Target Drop Regions
     playmat = new Playmat(this);
     tableManager = new TableManager(this);
+    deckBrowser = new DeckBrowser(this);
+
     setupTableInteractionListeners(this);
     setupDeckInteractionListeners(this);
     setupKeyboardCounterListeners(this);
@@ -361,4 +364,11 @@ function setupKeyboardCounterListeners(scene) {
     // Bind both standard minus and numeric keypad minus keys to fire our handler
     minusKey.on('down', handleMinusPressed);
     numpadMinus.on('down', handleMinusPressed);
+
+    // --- UPDATED DECK BROWSING MODAL TOGGLE ROUTE ---
+    scene.input.keyboard.on('keydown-B', () => {
+        // Validation guard removed to support mid-turn card lookup actions (e.g., Shaymin POR 3)
+        console.log("Hotkey B toggled. Opening Deck Browser instantly for strategic lookup...");
+        deckBrowser.toggle();
+    });
 }
