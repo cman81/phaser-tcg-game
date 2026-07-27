@@ -51,6 +51,7 @@ class TableManager {
         gameObject.y = dropZone.y;
         gameObject.setData('currentZone', null);
         gameObject.setData('isDeployed', true);
+        networkManager.broadcastCardMove(gameObject.cardData.uuid, gameObject.cardData, gameObject.x, gameObject.y, true, true);
         
         if (gameObject.input) gameObject.input.enabled = false;
         gameObject.setAlpha(0.5); 
@@ -111,6 +112,7 @@ class TableManager {
         dropZone.setData('isOccupied', true);
         gameObject.setData('currentZone', dropZone);
         gameObject.setData('isDeployed', true);
+        networkManager.broadcastCardMove(gameObject.cardData.uuid, gameObject.cardData, gameObject.x, gameObject.y, true, true);
 
         if (gameObject.input) gameObject.input.enabled = false;
 
@@ -151,6 +153,7 @@ class TableManager {
 
             gameObject.setData('isDeployed', true);
             gameObject.setData('currentZone', dropZone);
+            networkManager.broadcastCardMove(gameObject.cardData.uuid, gameObject.cardData, gameObject.x, gameObject.y, true, true);
 
             if (gameObject.input) gameObject.input.enabled = false;
 

@@ -277,6 +277,7 @@ class Card extends Phaser.GameObjects.Container {
                 yoyo: true,
                 ease: 'Quad.easeOut'
             });
+            networkManager.broadcastDamageMutation(this.cardData.uuid, this.damageCounters);
         } else {
             this.counterText.setVisible(false); // Hide completely if card is perfectly healthy
         }

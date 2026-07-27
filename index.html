@@ -2,11 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Phaser Card Game TCG Prototype</title>
-    
-    <!-- LOAD PHASER: Pull the game engine framework from a CDN -->
-    <script src="vendor/phaserjs/phaser.min.js"></script>
-    
+    <title>Phaser Card Game TCG Prototype</title>    
     <style>
         /* CENTER THE GAME SCREEN: Quick CSS to center our board on the screen */
         body { 
@@ -24,6 +20,12 @@
 
     <!-- THE CONTAINER: The target hook element for our game window -->
     <div id="phaser-game"></div>
+
+    <!-- LOAD THE WEBSOCKET ENGINE CLIENT DEPENDENCY FIRST -->
+    <script src="vendor/socketio/socket.io.min.js"></script>
+
+    <!-- LOAD PHASER: Pull the game engine framework -->
+    <script src="vendor/phaserjs/phaser.min.js"></script>
 
     <!-- Isolated Game Component Blueprints -->
     <script src="Card.js"></script>

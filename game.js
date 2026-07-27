@@ -59,25 +59,16 @@ function preload() {
 
 /** @this Phaser.Scene */
 function create() {
-    // 1. Initialize Board Layout & Input Target Drop Regions
     playmat = new Playmat(this);
     tableManager = new TableManager(this);
     deckBrowser = new DeckBrowser(this);
+    
+    // The client boots up completely blind
     networkManager = new MockNetworkManager(this);
-
-    setupTableInteractionListeners(this);
-    setupDeckInteractionListeners(this);
-    setupKeyboardInteractionController(this);
-
-    // 2. Initialize Core Database Array Pools
-    generateDeck();
-    shuffleDeck();
-
-    // 3. Initialize Head-Up UI Interface Components
     hud = new GameHud(this);
 
-    // 4. Launch Game Turn State Sequences
-    switchPhase(this, SandboxStates.SETUP);
+    // Call out to the 3rd entity server to spin up a secure, backend deck instance
+    networkManager.requestServerSessionInit();
 }
 
 /** @this Phaser.Scene */
@@ -147,63 +138,6 @@ function switchPhase(scene, newState) {
 // ============================================================================
 
 /**
- * Populates the global deck array by cycling through your unique prototyping card models.
- * 
- * This function handles the core data generation loop for our 60-card deck structure.
- * It reads from a localized prototyping configuration matrix, builds a standardized 
- * data payload mapping to texture frames, and leverages a secure fallback routine to 
- * assign a unique UUID identifier to each card entity container.
- *
- * @returns {void}
- */
-function generateDeck() {
-    deck = []; // Clear array state completely before population pass
-
-    const cardPrototypes = [
-        { name: "Pika", atlasKey: "pikachu", type: "character" },
-        { name: "Chan", atlasKey: "chandelure", type: "character" },
-        { name: "Sprig", atlasKey: "sprigatito", type: "character" },
-        { name: "Water", atlasKey: "water", type: "energy" }, // Designated Energy Piece
-        { name: "Fire", atlasKey: "fire", type: "energy" }   // Designated Energy Piece
-    ];
-    
-    for (let i = 1; i <= 60; i++) {
-        const prototypeIndex = (i - 1) % cardPrototypes.length;
-        const currentProto = cardPrototypes[prototypeIndex];
-
-        // Push fully unified individual card data tracking payload
-        deck.push({ 
-            id: i, 
-            uuid: generateUUID(), 
-            name: currentProto.name, 
-            atlasKey: currentProto.atlasKey,
-            type: currentProto.type
-        });
-    }
-}
-
-/**
- * Shuffles the global deck data array by re-assigning fresh UUID tokens
- * and sorting them alphabetically. Bypasses static array lockups.
- */
-function shuffleDeck() {
-    // 1. Loop through every remaining card item and assign a brand new random UUID token via shared helper
-    deck.forEach(card => {
-        card.uuid = generateUUID();
-    });
-
-    // 2. Standard alphanumeric array comparison sort using the freshly assigned string keys
-    deck.sort((cardA, cardB) => {
-        if (cardA.uuid < cardB.uuid) return -1;
-        if (cardA.uuid > cardB.uuid) return 1;
-        return 0;
-    });
-    
-    console.log(`[ENGINE] Fresh UUID tokens mapped. 60-Card Database Stack successfully scrambled. Cards: ${deck.length}`);
-}
-
-
-/**
  * Pops a card data node from the deck stack array and instantiates a visual card container.
  * 
  * This engine wrapper coordinates data popping with rendering instantiation. It spawns 
@@ -214,18 +148,8 @@ function shuffleDeck() {
  * @returns {void}
  */
 function dealCard(scene) {
-    if (deck.length === 0) return;
-
-    const cardData = deck.pop();
-
-    // Spawn the card high up off-screen (Y: -100) so it glides down smoothly
-    const visualCard = new Card(scene, 900, 300, cardData);
-
-    // Push into our tracker list array
-    hand.push(visualCard);
-
-    // Recalculate horizontal layout positioning metrics
-    updateHandLayout(scene);
+    // Re-route business request directly to the authoritative server facade
+    networkManager.requestCardDraw();
 }
 
 /**
