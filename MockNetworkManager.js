@@ -172,6 +172,32 @@ class MockNetworkManager {
             
             switchPhase(this.scene, SandboxStates.MY_TURN);
         });
+
+        // Event I: Secure Inventory Query Response for local Deck Browser modules
+        this.socket.on('DECK_CONTENT_RESULT', (data) => {
+            console.log(`[NETWORK-SOCKET] Received server deck cache node. Card count: ${data.deckList.length}`);
+            
+            // Open the view modal container passing your live server data array payload cleanly
+            if (deckBrowser) {
+                deckBrowser.open(data.deckList, "Deck Contents", true);
+            }
+        });
+
+        // Event J: Server Shuffle Confirmation Broadcast Interceptor
+        this.socket.on('SERVER_SHUFFLE_CONFIRMED', (data) => {
+            const isMe = (data.actor === this.playerSlot);
+            console.log(`[NETWORK-SOCKET] Global deck shuffle logged by server for actor slot: ${data.actor}`);
+            
+            if (hud) {
+                // Flash rule notification alerts cleanly matching who triggered the shuffle pass
+                if (isMe) {
+                    hud.flashWarning("Your deck was securely re-shuffled blindly face-down.");
+                    hud.deckCountText.setText(`Deck: ${data.remainingCount} cards`);
+                } else {
+                    hud.flashWarning("Opponent is shuffling their deck pile blindly face-down...");
+                }
+            }
+        });
     }
 
     /**
@@ -221,4 +247,19 @@ class MockNetworkManager {
             newDamageValue: newDamageValue
         });
     }
+
+    /**
+     * Dispatcher: Requests the authoritative server to transmit our current private deck array contents.
+     */
+    requestDeckContent() {
+        this.socket.emit('REQUEST_DECK_CONTENT', this.roomCode);
+    }
+
+    /**
+     * Dispatcher: Requests the authoritative server to shuffle our private backend deck list.
+     */
+    requestDeckShuffle() {
+        this.socket.emit('REQUEST_DECK_SHUFFLE', this.roomCode);
+    }
+
 }

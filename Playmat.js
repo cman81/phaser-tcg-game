@@ -1,4 +1,5 @@
 /**
+ * Playmat
  * Handles the configuration, physical sandbox zones, and structural mechanics of the board table.
  */
 class Playmat {

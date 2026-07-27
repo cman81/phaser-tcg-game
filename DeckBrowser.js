@@ -134,6 +134,7 @@ class DeckBrowser {
 
     /**
      * Conditionally appends the emerald randomizer layout button only during deck searches.
+     * Refactored: Routes the shuffle request directly up to the authoritative game server.
      */
     appendShuffleWidget(canDraft) {
         if (!canDraft) return;
@@ -143,13 +144,16 @@ class DeckBrowser {
         }).setOrigin(0.5).setInteractive();
         
         shuffleBtn.on('pointerdown', () => {
-            this.close();
-            shuffleDeck();
-            if (hud) hud.flashWarning("Deck securely re-shuffled blindly face-down.");
-            if (networkManager) networkManager.broadcastState('BLIND_SHUFFLE_EXECUTED', {});
+            this.close(); // Instantly collapse the browser overlay matrix
+            
+            // Dispatch a secure network request up to our separate backend service repo
+            if (networkManager) {
+                networkManager.requestDeckShuffle();
+            }
         });
-        this.hudContent.add(shuffleBtn); // <-- UPDATED TARGET
+        this.hudContent.add(shuffleBtn);
     }
+
 
     renderTargetGrid() {
         const startX = 140;

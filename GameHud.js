@@ -1,4 +1,5 @@
 /**
+ * GameHud
  * Directs text trackers, interactive button widgets, and phase status readouts.
  */
 class GameHud {

@@ -1,4 +1,5 @@
 /**
+ * Card
  * Custom container representing a visual card item in the hand or on the board.
  */
 class Card extends Phaser.GameObjects.Container {

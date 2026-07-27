@@ -65,6 +65,11 @@ function create() {
     
     // The client boots up completely blind
     networkManager = new MockNetworkManager(this);
+
+    setupTableInteractionListeners(this);
+    setupDeckInteractionListeners(this);
+    setupKeyboardInteractionController(this);
+
     hud = new GameHud(this);
 
     // Call out to the 3rd entity server to spin up a secure, backend deck instance
@@ -86,17 +91,8 @@ function update() {
  * @returns {void}
  */
 function switchPhase(scene, newState) {
-    // If trying to move to MY_TURN directly from SETUP, run the opponent's deployment first
-    if (currentPhase === SandboxStates.SETUP && newState === SandboxStates.MY_TURN) {
-        // Prevent double triggers by hiding the interface button instantly
-        if (hud) hud.endTurnButton.setVisible(false);
-        currentPhase = SandboxStates.MY_TURN; 
-        
-        // Let the manager animate everything, then it will recall switchPhase automatically
-        networkManager.executeOpponentSetupSequence();
-        return; 
-    }
-
+    // --- FIXED: STRIP OUT OBSOLETE LEGACY SEED SEQUENCERS ---
+    // The authoritative server handles state vectors now, bypassing local client setup calls.
     currentPhase = newState;
     console.log(`[CLOCK PIVOT] Active State Changed To: ${currentPhase}`);
 
@@ -122,13 +118,16 @@ function switchPhase(scene, newState) {
 
         case SandboxStates.OPPONENT_TURN:
             if (hud) {
-                // Keep the button visible so you can manually intercept or advance their turn!
                 hud.endTurnButton.setText("Intercept Turn"); 
                 hud.endTurnButton.setVisible(true);
             }
             
-            // Delegate the automated actions smoothly to your loopback facade service
-            networkManager.runOpponentSandboxTurn();
+            // --- FIXED: TRANSMIT TURN SWITCH TO SECURE SEPARATE RE-ROUTING SERVER ---
+            // Tells your standalone server repo to pass the chess clock plunger to Player B's tab
+            networkManager.socket.emit('PHASE_SWAPPED', { 
+                roomCode: networkManager.roomCode,
+                newState: SandboxStates.OPPONENT_TURN 
+            });
             break;
     }
 }
@@ -230,19 +229,9 @@ function setupDeckInteractionListeners(scene) {
 
     // Listen for mouse down clicks directly over the physical deck zone boundaries
     playmat.deckZone.on('pointerdown', () => {
-        // Safety Guard: Stop if the array deck pool is completely empty
-        if (deck.length === 0) {
-            if (hud) hud.flashWarning("Your deck is empty.");
-            return;
-        }
-
-        // DELEGATE BUSINESS LOGIC: Reuse the uniform dealer pipeline
+        // --- FIXED: BYPASS DEAD CLIENT ARRAYS ---
+        // Delegate the business draw request entirely to the authoritative server facade
         dealCard(scene);
-
-        // Update the text layers on your HUD safely
-        if (hud) {
-            hud.deckCountText.setText(`Deck: ${deck.length} cards`);
-        }
     });
 }
 
@@ -281,8 +270,11 @@ function setupKeyboardInteractionController(scene) {
     numpadMinus.on('down', handleMinusPressed);
 
     // --- DECK BROWSER TOGGLE ROUTE ---
+    // FIXED: Requests your raw card data dynamically from the server cache on the fly!
     scene.input.keyboard.on('keydown-B', () => {
-        deckBrowser.open(deck, "Deck Contents", true); // Pass target array, title, and draftable flag
+        if (networkManager) {
+            networkManager.requestDeckContent();
+        }
     });
 
     // --- NEW: DISCARD PILE BROWSER TOGGLE ROUTE ---
@@ -290,33 +282,13 @@ function setupKeyboardInteractionController(scene) {
         deckBrowser.open(discardPile, "Your Discard Pile", false); // Discard views are review-only (no drafting yet)
     });
 
-    // --- ADD MOCK OPPONENT PLACEMENT ROUTE ---
-    const handleOpponentDraw = () => {
-        console.log("Opponent draw hotkey triggered. Spawning an automated network ghost card play...");
-        if (networkManager) {
-            networkManager.simulateOpponentPlay();
-        }
-    };
-
-    // Bind alphabetical 'O' to fire your mock engine handler cleanly
-    scene.input.keyboard.on('keydown-O', handleOpponentDraw);
-
     // --- NEW: INSPECT OPPONENT DISCARD TOGGLE ROUTE ---
     scene.input.keyboard.on('keydown-P', () => {
-        deckBrowser.open(oppDiscardPile, "Opponent Discard Pile", false); // Public knowledge, review-only
-    });
-
-    // --- NEW: TRIGGER MOCK OPPONENT DISCARD ANIMATION ---
-    scene.input.keyboard.on('keydown-I', () => {
-        console.log("Hotkey I pressed. Simulating opponent discarding a card from hand...");
-        if (networkManager) {
-            networkManager.simulateOpponentDiscard();
-        }
+        deckBrowser.open(oppDiscardPile, "Opponent Discard Pile", false); 
     });
 
     // --- TACTILE UNDO PLAYMAT ROUTE ---
     scene.input.keyboard.on('keydown-Z', () => {
-        // Only allow moves to be undone if it's currently your turn or during initial setup
         if (currentPhase === SandboxStates.MY_TURN || currentPhase === SandboxStates.SETUP) {
             tableManager.undoLastMove();
         } else {
